@@ -61,7 +61,7 @@ def cut_table_by_dates(table_name, latest_date):
     for chunk, data_df in enumerate(pd.read_csv(
             in_tables_dir + table_name + '.csv',
             chunksize=5_000_000,
-            parse_dates=[date_col]
+            parse_dates=[date_col],
     )):
         log(f'Getting chunk No. {chunk}...')
         dates = list(pd.unique(data_df[date_col].dt.strftime('%Y%m%d')))
@@ -82,7 +82,7 @@ def cut_table_by_dates(table_name, latest_date):
 
 def get_new_last_date(table_name, tables_dir):
     date_suffixes = [
-        x.split('-')[-1].split("_")[0]
+        x.split('_')[-1].replace('.csv','')
         for x in os.listdir(out_tables_dir)
         if x.endswith('.csv') and x.startswith(table_name)
     ]
@@ -179,14 +179,11 @@ else:
             latest_date = get_latest_date_from_config_file(config_file_path)
             cut_table_by_dates(table_name, latest_date)
             new_last_date = get_new_last_date(table_name, tables_dir=out_tables_dir)
-            if new_last_date is not None:
-                log(f'New last date is: {new_last_date}')
-                update_config_file(config_file_path, new_last_date)
-                write_new_config(
-                    block_blob_service, config_container, out_data_dir, table_name
-                )
-                log(
-                    f'Config for {table_name} successfully uploaded to {config_container} storage container of BlockBlobService...'
+            log(f'New last date is: {new_last_date}')
+            update_config_file(config_file_path, new_last_date)
+            write_new_config(
+            block_blob_service, config_container, out_data_dir, table_name)
+            log(f'Config for {table_name} successfully uploaded to {config_container} storage container of BlockBlobService...'
                 )
         except Exception as e:
             log(f'Something went wrong during {table_name} table upload...')
