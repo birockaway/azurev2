@@ -26,12 +26,11 @@ def download_config(base_blob_service, config_container, table_name):
 # Upload the CSV file to Azure cloud
 def write_table(block_blob_service, data_container, tables_folder,
                 table_name, table_name_suffix='', timestamp_suffix=False):
-    '''
+    """
     write the table to blob storage.
-    '''
+    """
     if str(timestamp_suffix).lower() == 'true':
-        print('here')
-        tmp_table = pd.read_csv(tables_folder + table_name + '.csv', parse_dates=[date_col])
+        tmp_table = pd.read_csv(tables_folder + table_name + '.csv', usecols=[date_col], parse_dates=[date_col])
         max_timestamp = max(int(timeint) for timeint
                             in list(pd.unique(tmp_table[date_col].dt.strftime('%Y%m%d%H%M%S'))))
         table_name_suffix = f'{table_name_suffix}_ {max_timestamp}'
@@ -68,7 +67,6 @@ def cut_table_by_dates(table_name, latest_date):
 
         new_dates = [date for date in dates if int(date) > int(latest_date)]
 
-
         for new_date in new_dates:
             table_name_and_date = f'{table_name}_{new_date}'
             if table_name_and_date not in result_files_dict.keys():
@@ -82,7 +80,7 @@ def cut_table_by_dates(table_name, latest_date):
 
 def get_new_last_date(table_name, tables_dir):
     date_suffixes = [
-        x.split('_')[-1].replace('.csv','')
+        x.split('_')[-1].replace('.csv', '')
         for x in os.listdir(out_tables_dir)
         if x.endswith('.csv') and x.startswith(table_name)
     ]
@@ -151,7 +149,6 @@ out_data_dir = f'{tempdir}'
 os.makedirs(tempdir)
 os.makedirs(out_tables_dir)
 
-
 block_blob_service = BlockBlobService(account_name=account_name, account_key=account_key)
 base_blob_service = BaseBlobService(account_name=account_name, account_key=account_key)
 log(f'Docker cointainer will try to connect to {account_name} account of BlockBlobService...')
@@ -182,8 +179,9 @@ else:
             log(f'New last date is: {new_last_date}')
             update_config_file(config_file_path, new_last_date)
             write_new_config(
-            block_blob_service, config_container, out_data_dir, table_name)
-            log(f'Config for {table_name} successfully uploaded to {config_container} storage container of BlockBlobService...'
+                block_blob_service, config_container, out_data_dir, table_name)
+            log(
+                f'Config for {table_name} successfully uploaded to {config_container} storage container of BlockBlobService...'
                 )
         except Exception as e:
             log(f'Something went wrong during {table_name} table upload...')
