@@ -56,7 +56,6 @@ def write_new_config(block_blob_service, data_container, config_folder, table_na
 
 
 def cut_table_by_dates(table_name, latest_date):
-    result_files_dict = {}
     for chunk, data_df in enumerate(pd.read_csv(
             in_tables_dir + table_name + '.csv',
             chunksize=5_000_000,
@@ -68,15 +67,12 @@ def cut_table_by_dates(table_name, latest_date):
         new_dates = [date for date in dates if int(date) > int(latest_date)]
 
         for new_date in new_dates:
-            table_name_and_date = f'{table_name}_{new_date}'
-            if table_name_and_date not in result_files_dict.keys():
-                result_files_dict[table_name_and_date] = open(f'{out_tables_dir}{table_name_and_date}.csv', 'a+')
             new_data_df = data_df[new_date == data_df[date_col].dt.strftime('%Y%m%d')]
-            new_data_df.to_csv(result_files_dict[table_name_and_date], index=False,
-                               header=result_files_dict[table_name_and_date].tell()==0)
+            table_name_and_date = f'{table_name}_{new_date}'
+            with open(f'{out_tables_dir}{table_name_and_date}.csv', 'a+') as f:
+                new_data_df.to_csv(f, index=False,
+                                   header=f.tell()==0)
 
-        for conn in result_files_dict.values():
-            conn.close()
 
 
 def get_new_last_date(table_name, tables_dir):
