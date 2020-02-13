@@ -33,7 +33,7 @@ def write_table(block_blob_service, data_container, tables_folder,
         tmp_table = pd.read_csv(tables_folder + table_name + '.csv', usecols=[date_col], parse_dates=[date_col])
         max_timestamp = max(int(timeint) for timeint
                             in list(pd.unique(tmp_table[date_col].dt.strftime('%Y%m%d%H%M%S'))))
-        table_name_suffix = f'{table_name_suffix}_ {max_timestamp}'
+        table_name_suffix = f'{table_name_suffix}-{max_timestamp}'
 
     block_blob_service.create_blob_from_path(
         data_container,
