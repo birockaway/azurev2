@@ -84,7 +84,7 @@ def cut_table_by_dates(table_name, latest_date):
 def get_new_last_date(table_name, tables_dir):
     date_suffixes = [
         x.split('_')[-1].replace('.csv', '')
-        for x in os.listdir(out_tables_dir)
+        for x in os.listdir(tables_dir)
         if x.endswith('.csv') and x.startswith(table_name)
     ]
 
