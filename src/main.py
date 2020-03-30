@@ -25,14 +25,19 @@ def download_config(base_blob_service, config_container, table_name):
 
 # Upload the CSV file to Azure cloud
 def write_table(block_blob_service, data_container, tables_folder,
-                table_name, table_name_suffix='', timestamp_suffix=False):
+                table_name, table_name_suffix='', timestamp_suffix=False,
+                timestamp_suffix_source=None):
     """
     write the table to blob storage.
     """
-    if str(timestamp_suffix).lower() == 'true':
+    if str(timestamp_suffix).lower() == 'true' and timestamp_suffix_source == 'data':
         tmp_table = pd.read_csv(tables_folder + table_name + '.csv', usecols=[date_col], parse_dates=[date_col])
         max_timestamp = max(int(timeint) for timeint
                             in list(pd.unique(tmp_table[date_col].dt.strftime('%Y%m%d%H%M%S'))))
+        table_name_suffix = f'{table_name_suffix}-{max_timestamp}'
+
+    elif str(timestamp_suffix).lower() == 'true' and timestamp_suffix_source != 'data':
+        max_timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         table_name_suffix = f'{table_name_suffix}-{max_timestamp}'
 
     block_blob_service.create_blob_from_path(
@@ -71,8 +76,7 @@ def cut_table_by_dates(table_name, latest_date):
             table_name_and_date = f'{table_name}_{new_date}'
             with open(f'{out_tables_dir}{table_name_and_date}.csv', 'a+') as f:
                 new_data_df.to_csv(f, index=False,
-                                   header=f.tell()==0)
-
+                                   header=f.tell() == 0)
 
 
 def get_new_last_date(table_name, tables_dir):
@@ -106,11 +110,13 @@ def update_config_file(file_path, new_last_date):
 
 
 def write_table_list_to_azure(block_blob_service, data_container,
-                              tables_folder, table_name_list, add_timestamp_suffix=False):
+                              tables_folder, table_name_list, add_timestamp_suffix=False,
+                              timestamp_suffix_source=timestamp_suffix_source):
     for table_name in table_name_list:
         try:
             write_table(block_blob_service, data_container, tables_folder, table_name,
-                        timestamp_suffix=add_timestamp_suffix)
+                        timestamp_suffix=add_timestamp_suffix,
+                        timestamp_suffix_source=timestamp_suffix_source)
             log(
                 f'Table {table_name} successfully uploaded to {data_container} storage container of BlockBlobService...'
             )
@@ -129,6 +135,7 @@ account_name = parameters.get('account_name')
 data_container = parameters.get('data_container')
 config_container = parameters.get('config_container')
 add_timestamp_suffix = parameters.get('add_timestamp_suffix')
+timestamp_suffix_source = parameters.get('timestamp_suffix_source')
 upload_all = parameters.get('upload_all')
 date_col = parameters.get('date_col')
 log('Parameters loaded.')
@@ -163,7 +170,8 @@ log(f'Uploading tables {in_tables_list} to {data_container} storage container of
 
 if not config_container or str(upload_all) == 'true':
     write_table_list_to_azure(block_blob_service, data_container,
-                              in_tables_dir, in_tables_list, add_timestamp_suffix=add_timestamp_suffix)
+                              in_tables_dir, in_tables_list, add_timestamp_suffix=add_timestamp_suffix,
+                              timestamp_suffix_source=timestamp_suffix_source)
 else:
     # Expand in tables & update config
     for table_name in in_tables_list:
