@@ -36,9 +36,11 @@ def write_table(block_blob_service, data_container, tables_folder,
                             in list(pd.unique(tmp_table[date_col].dt.strftime('%Y%m%d%H%M%S'))))
         table_name_suffix = f'{table_name_suffix}-{max_timestamp}'
 
-    elif str(timestamp_suffix).lower() == 'true' and timestamp_suffix_source != 'data':
+    if str(timestamp_suffix).lower() == 'true' and timestamp_suffix_source == 'current_time':
         max_timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         table_name_suffix = f'{table_name_suffix}-{max_timestamp}'
+
+    log(f'Table name suffix: {table_name_suffix}')
 
     block_blob_service.create_blob_from_path(
         data_container,
@@ -187,7 +189,7 @@ else:
                 block_blob_service, config_container, out_data_dir, table_name)
             log(
                 f'Config for {table_name} successfully uploaded to {config_container} storage container of BlockBlobService...'
-                )
+            )
         except Exception as e:
             log(f'Something went wrong during {table_name} table upload...')
             log(f'Exception: {str(e)}')
