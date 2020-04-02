@@ -47,10 +47,12 @@ def write_csv_to_azure(block_blob_service, azure_container, table_path,
 
     block_blob_service.create_blob_from_path(
         azure_container,
-        table_name + '_' + timestamp + '.csv',
+        table_name + '-' + timestamp + '.csv',
         table_path,
         content_settings=ContentSettings(content_type='application/CSV'),
     )
+
+    return None
 
 
 if __name__ == '__main__':
